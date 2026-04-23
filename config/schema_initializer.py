@@ -73,6 +73,86 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     ) ENGINE=InnoDB
     """,
     """
+    CREATE TABLE IF NOT EXISTS BETTING_STRATEGIES (
+        strategy_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        strategy_code VARCHAR(40) NOT NULL,
+        strategy_name VARCHAR(100) NOT NULL,
+        strategy_type VARCHAR(40) NOT NULL,
+        is_progressive BOOLEAN NOT NULL DEFAULT FALSE,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (strategy_id),
+        UNIQUE KEY uq_betting_strategies_code (strategy_code)
+    ) ENGINE=InnoDB
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS BETS (
+        bet_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id BIGINT UNSIGNED NOT NULL,
+        gambler_id BIGINT UNSIGNED NOT NULL,
+        strategy_id SMALLINT UNSIGNED NOT NULL,
+        game_index INT NOT NULL,
+        bet_amount DECIMAL(18, 2) NOT NULL,
+        win_probability DECIMAL(7, 6) NOT NULL DEFAULT 0.500000,
+        odds_type VARCHAR(20) NOT NULL DEFAULT 'DECIMAL',
+        odds_value DECIMAL(18, 6) NOT NULL DEFAULT 2.000000,
+        potential_win DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        stake_before DECIMAL(18, 2) NOT NULL,
+        stake_after DECIMAL(18, 2) NOT NULL,
+        is_settled BOOLEAN NOT NULL DEFAULT FALSE,
+        placed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (bet_id),
+        UNIQUE KEY uq_bets_session_game_index (session_id, game_index),
+        KEY idx_bets_session_placed (session_id, placed_at),
+        KEY idx_bets_gambler_placed (gambler_id, placed_at),
+        CONSTRAINT fk_bets_session
+            FOREIGN KEY (session_id)
+            REFERENCES SESSIONS (session_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+        CONSTRAINT fk_bets_gambler
+            FOREIGN KEY (gambler_id)
+            REFERENCES GAMBLERS (gambler_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+        CONSTRAINT fk_bets_strategy
+            FOREIGN KEY (strategy_id)
+            REFERENCES BETTING_STRATEGIES (strategy_id)
+            ON DELETE RESTRICT
+            ON UPDATE CASCADE
+    ) ENGINE=InnoDB
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS GAME_RECORDS (
+        game_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id BIGINT UNSIGNED NOT NULL,
+        bet_id BIGINT UNSIGNED NOT NULL,
+        outcome VARCHAR(20) NOT NULL,
+        payout_amount DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        loss_amount DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        net_change DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        stake_before DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        stake_after DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        consecutive_win_streak INT NOT NULL DEFAULT 0,
+        consecutive_loss_streak INT NOT NULL DEFAULT 0,
+        game_duration_ms INT NULL,
+        resolved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (game_id),
+        UNIQUE KEY uq_game_records_bet (bet_id),
+        KEY idx_game_records_session_resolved (session_id, resolved_at),
+        CONSTRAINT fk_game_records_session
+            FOREIGN KEY (session_id)
+            REFERENCES SESSIONS (session_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+        CONSTRAINT fk_game_records_bet
+            FOREIGN KEY (bet_id)
+            REFERENCES BETS (bet_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+    ) ENGINE=InnoDB
+    """,
+    """
     CREATE TABLE IF NOT EXISTS STAKE_TRANSACTIONS (
         transaction_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         session_id BIGINT UNSIGNED NULL,
