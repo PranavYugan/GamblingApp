@@ -161,6 +161,21 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     ) ENGINE=InnoDB
     """,
     """
+    CREATE TABLE IF NOT EXISTS ODDS_CONFIGURATIONS (
+        odds_config_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        odds_type VARCHAR(20) NOT NULL,
+        fixed_multiplier DECIMAL(18, 6) NOT NULL DEFAULT 2.000000,
+        american_odds INT NULL,
+        decimal_odds DECIMAL(18, 6) NOT NULL DEFAULT 2.000000,
+        probability_payout_factor DECIMAL(18, 6) NOT NULL DEFAULT 1.000000,
+        house_edge DECIMAL(10, 6) NOT NULL DEFAULT 0.000000,
+        is_default BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (odds_config_id),
+        UNIQUE KEY uq_odds_configurations_odds_type (odds_type)
+    ) ENGINE=InnoDB
+    """,
+    """
     CREATE TABLE IF NOT EXISTS GAME_RECORDS (
         game_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         session_id BIGINT UNSIGNED NOT NULL,
