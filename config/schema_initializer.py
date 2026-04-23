@@ -73,6 +73,44 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     ) ENGINE=InnoDB
     """,
     """
+    CREATE TABLE IF NOT EXISTS SESSION_PARAMETERS (
+        parameter_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id BIGINT UNSIGNED NOT NULL,
+        lower_limit DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        upper_limit DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        min_bet DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        max_bet DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        default_win_probability DECIMAL(7, 6) NOT NULL DEFAULT 0.500000,
+        max_session_minutes INT NOT NULL DEFAULT 120,
+        strict_mode BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (parameter_id),
+        UNIQUE KEY uq_session_parameters_session (session_id),
+        CONSTRAINT fk_session_parameters_session
+            FOREIGN KEY (session_id)
+            REFERENCES SESSIONS (session_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+    ) ENGINE=InnoDB
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS PAUSE_RECORDS (
+        pause_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id BIGINT UNSIGNED NOT NULL,
+        pause_reason VARCHAR(255) NULL,
+        paused_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        resumed_at DATETIME NULL,
+        pause_seconds INT NULL,
+        PRIMARY KEY (pause_id),
+        KEY idx_pause_records_session_paused (session_id, paused_at),
+        CONSTRAINT fk_pause_records_session
+            FOREIGN KEY (session_id)
+            REFERENCES SESSIONS (session_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+    ) ENGINE=InnoDB
+    """,
+    """
     CREATE TABLE IF NOT EXISTS BETTING_STRATEGIES (
         strategy_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
         strategy_code VARCHAR(40) NOT NULL,
