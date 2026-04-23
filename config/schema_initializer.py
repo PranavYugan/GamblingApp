@@ -48,6 +48,31 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     ) ENGINE=InnoDB
     """,
     """
+    CREATE TABLE IF NOT EXISTS SESSIONS (
+        session_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        gambler_id BIGINT UNSIGNED NOT NULL,
+        status VARCHAR(24) NOT NULL DEFAULT 'ACTIVE',
+        end_reason VARCHAR(40) NULL,
+        starting_stake DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        ending_stake DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        peak_stake DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        lowest_stake DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        max_games INT NOT NULL DEFAULT 100,
+        games_played INT NOT NULL DEFAULT 0,
+        total_pause_seconds INT NOT NULL DEFAULT 0,
+        started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        ended_at DATETIME NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (session_id),
+        KEY idx_sessions_gambler_started (gambler_id, started_at),
+        CONSTRAINT fk_sessions_gambler
+            FOREIGN KEY (gambler_id)
+            REFERENCES GAMBLERS (gambler_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+    ) ENGINE=InnoDB
+    """,
+    """
     CREATE TABLE IF NOT EXISTS STAKE_TRANSACTIONS (
         transaction_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         session_id BIGINT UNSIGNED NULL,
@@ -62,10 +87,40 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (transaction_id),
         UNIQUE KEY uq_stake_transactions_ref (transaction_ref),
+        KEY idx_stake_transactions_session_created (session_id, created_at),
         KEY idx_stake_transactions_gambler_created (gambler_id, created_at),
+        CONSTRAINT fk_stake_transactions_session
+            FOREIGN KEY (session_id)
+            REFERENCES SESSIONS (session_id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE,
         CONSTRAINT fk_stake_transactions_gambler
             FOREIGN KEY (gambler_id)
             REFERENCES GAMBLERS (gambler_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+    ) ENGINE=InnoDB
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS RUNNING_TOTALS_SNAPSHOTS (
+        snapshot_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        session_id BIGINT UNSIGNED NOT NULL,
+        game_id BIGINT UNSIGNED NULL,
+        total_games INT NOT NULL DEFAULT 0,
+        transaction_count INT NOT NULL DEFAULT 0,
+        total_credits DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        total_debits DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        net_change DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        current_balance DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        peak_stake DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        lowest_stake DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        volatility DECIMAL(18, 6) NOT NULL DEFAULT 0.000000,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (snapshot_id),
+        KEY idx_running_snapshots_session_created (session_id, created_at),
+        CONSTRAINT fk_running_snapshots_session
+            FOREIGN KEY (session_id)
+            REFERENCES SESSIONS (session_id)
             ON DELETE CASCADE
             ON UPDATE CASCADE
     ) ENGINE=InnoDB
