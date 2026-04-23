@@ -161,6 +161,43 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     ) ENGINE=InnoDB
     """,
     """
+    CREATE TABLE IF NOT EXISTS VALIDATION_EVENTS (
+        validation_event_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        gambler_id BIGINT UNSIGNED NULL,
+        session_id BIGINT UNSIGNED NULL,
+        bet_id BIGINT UNSIGNED NULL,
+        validation_scope VARCHAR(60) NOT NULL,
+        field_name VARCHAR(80) NULL,
+        input_value VARCHAR(255) NULL,
+        severity VARCHAR(10) NOT NULL,
+        error_code VARCHAR(80) NOT NULL,
+        message VARCHAR(255) NOT NULL,
+        recoverable BOOLEAN NOT NULL DEFAULT TRUE,
+        user_feedback VARCHAR(255) NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (validation_event_id),
+        KEY idx_validation_events_gambler_created (gambler_id, created_at),
+        KEY idx_validation_events_session_created (session_id, created_at),
+        KEY idx_validation_events_bet_created (bet_id, created_at),
+        KEY idx_validation_events_scope_severity (validation_scope, severity, created_at),
+        CONSTRAINT fk_validation_events_gambler
+            FOREIGN KEY (gambler_id)
+            REFERENCES GAMBLERS (gambler_id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE,
+        CONSTRAINT fk_validation_events_session
+            FOREIGN KEY (session_id)
+            REFERENCES SESSIONS (session_id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE,
+        CONSTRAINT fk_validation_events_bet
+            FOREIGN KEY (bet_id)
+            REFERENCES BETS (bet_id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE
+    ) ENGINE=InnoDB
+    """,
+    """
     CREATE TABLE IF NOT EXISTS ODDS_CONFIGURATIONS (
         odds_config_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         odds_type VARCHAR(20) NOT NULL,
